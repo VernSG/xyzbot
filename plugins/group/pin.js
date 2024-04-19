@@ -1,5 +1,6 @@
 let handler = async (msg, { client, text }) => {
     var _participants = (await msg.getChat()).groupMetadata.participants
+    if (_participants.id._serialized == msg.author && !_participants.isAdmin) return msg.reply("Administrator group only!")
     if (!msg.hasQuotedMsg) {
         msg.react("⚠");
         return msg.reply("Reply a message to pin!");
@@ -25,7 +26,6 @@ let handler = async (msg, { client, text }) => {
 
 handler.help = ['pin <time> (default 24hour)'];
 handler.tags = ['group'];
-handler.owner = true;
 handler.command = /^(pin)$/i
 
 module.exports = handler;

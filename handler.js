@@ -52,14 +52,14 @@ module.exports = {
         afkUser.afk = -1
         afkUser.afkReason = ''
       }
-      let afkJids = [...new Set([...(msg.mentionedIds || []), ...(m.quoted ? [await (await msg.getQuotedMessage()).mentionedIds] : [])])]
+      let afkJids = [...new Set([...(msg.mentionedIds || []), ...(msg.quoted ? [await (await msg.getQuotedMessage()).mentionedIds] : [])])]
       for (let jid of afkJids) {
         let users = global.db.data.users[jid._serialized]
         if (!users) continue
         let afkTime = users.afk
         if (!afkTime || afkTime < 0) continue
         let reason = users.afkReason || ''
-        m.reply(`Dia tidak ada untuk saat ini. (selama ${clockString(new Date - afkUser.afk)})\nAlasan : ${reason}`)
+        msg.reply(`Dia tidak ada untuk saat ini. (selama ${clockString(new Date - afkUser.afk)})\nAlasan : ${reason}`)
       }
 
       // Plugin midman (prevent users to running the plugins)

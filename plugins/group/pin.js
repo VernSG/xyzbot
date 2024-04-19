@@ -26,6 +26,8 @@ let handler = async (msg, { client, text }) => {
 
 handler.help = ['pin <time> (default 24hour)'];
 handler.tags = ['group'];
+handler.admin = true;
+handler.botAdmin = true;
 handler.command = /^(pin)$/i
 
 module.exports = handler;

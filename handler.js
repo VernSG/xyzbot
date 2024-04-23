@@ -68,6 +68,7 @@ module.exports = {
         .map((v) => v?.replace(/[^0-9]/g, ""))
         .includes((isGroup ? msg.author : msg.from).split("@")[0]);
       let isOwner = isROwner || msg.fromMe;
+      let isMods = global.mods.includes((isGroup ? msg.author : msg.from).split("@")[0]);
 
       let groupMetadata = isGroup ? chats.groupMetadata : {};
       let participants = isGroup ? groupMetadata.participants : [];
@@ -144,6 +145,10 @@ module.exports = {
             msg.reply("This commnd can only executed on private chat.");
             continue;
           }
+          if (plugin.mods && !isMods) {
+            msg.reply("This command can only executed by the moderators.");
+            continue;
+          }
 
           msg.isCommand = true;
 
@@ -169,6 +174,8 @@ module.exports = {
             users,
             isGroup,
             isAdmin,
+            isOwner,
+            isMods
           };
           try {
             await plugin.call(this, msg, extra);

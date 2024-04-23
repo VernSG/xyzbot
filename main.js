@@ -84,11 +84,16 @@ try {
 const { Low, JSONFile } = low;
 global.db = new Low(new JSONFile("database.json"));
 
+// Roles
+global.roles = JSON.parse(fs.readFileSync('./roles.json'))
+global.mods = roles.mods
+
 async function ClientConnect() {
   global.client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
       args: ["--no-sandbox", "--disable-gpu"],
+      executablePath: "/usr/bin/google-chrome-stable",
     },
   });
 

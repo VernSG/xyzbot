@@ -32,8 +32,8 @@ let handler = async (msg, { command }) => {
         str =
           "```" +
           `Current Trailblazer Power: ${current_stamina}/${max_stamina}${
-            stamina_recover_time === "0" ? ", Sudah penuh" : `, ${toHoursAndMinutes(stamina_recover_time)} lagi untuk penuh`
-          }\nPelaksanaan Tugas (${accepted_epedition_num}/${total_expedition_num})\nExpeditions/Tugas:\n${_expeditions.join("\n")}` +
+            stamina_recover_time === 0 ? ", Sudah penuh" : `, ${toHoursAndMinutes(stamina_recover_time)} lagi untuk penuh`
+          }\nTrailblazer Power Cadangan: ${result.current_reserve_stamina}/2400\nPelaksanaan Tugas (${accepted_epedition_num}/${total_expedition_num})\nExpeditions/Tugas:\n${_expeditions.join("\n")}` +
           "```";
       } else {
         let _giexpeditions = [];

@@ -15,9 +15,12 @@ let handler = async (msg, { client, text }) => {
       let name = global.db.data.users[users]
         ? global.db.data.users[users].name
         : areJidsSameUser(serializeJid(client.user.id), users)
-        ? client.user.name
-        : PhoneNumber("+" + users.split("@")[0]).getNumber("international");
-      text = text.replace("@" + users.split`@`[0], chalk.blueBright("@" + name));
+          ? client.user.name
+          : PhoneNumber("+" + users.split("@")[0]).getNumber("international");
+      text = text.replace(
+        "@" + users.split`@`[0],
+        chalk.blueBright("@" + name),
+      );
     }
   }
 
@@ -54,12 +57,12 @@ let handler = async (msg, { client, text }) => {
     ],
   };
   msg.react("⏳");
-  const { data } = await axios.post("https://bot.lyo.su/quote/generate", request, {
+  const { data } = await axios.post("https://api.safone.dev/quotly", request, {
     headers: { "Content-Type": "application/json" },
   });
 
   if (data) {
-    const sticker = new Sticker(Buffer.from(data.result.image, "base64"), {
+    const sticker = new Sticker(Buffer.from(data.image, "base64"), {
       pack: global.sticker.packname,
       author: global.sticker.author,
       type: StickerTypes.FULL,

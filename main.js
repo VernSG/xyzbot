@@ -26,47 +26,38 @@ const pluginFolder = path.join(__dirname, "plugins");
 const pluginFilter = fs.readdirSync(pluginFolder, { withFileTypes: true }).filter((v) => v.isDirectory());
 const pluginFile = (filename) => /\.js$/.test(filename);
 
-pluginFilter.map(async ({ name }) => {
-  global.plugins = {};
-  let files = await fs.readdirSync(path.join(pluginFolder, name));
+global.plugins = {};
+pluginFilter.forEach(({ name }) => {
+  let files = fs.readdirSync(path.join(pluginFolder, name));
   for (let filename of files) {
-    try {
+    if (pluginFile(filename)) {
       global.plugins[filename] = require(path.join(pluginFolder, name, filename));
-      fs.watch(pluginFolder + "/" + name, global.reload);
-    } catch (e) {
-      logger.error(e);
-      delete global.plugins[filename];
+      fs.watch(path.join(pluginFolder, name, filename), global.reload);
     }
   }
 });
 logger.info("All plugins has been loaded.");
 
 global.reload = async (_event, filename) => {
-  if (pluginFile(filename)) {
-    let subdirs = await fs.readdirSync(pluginFolder);
-    subdirs.forEach((files) => {
-      let dir = path.join(pluginFolder, files, filename);
-      if (fs.existsSync(dir)) {
-        if (dir in require.cache) {
-          delete require.cache[dir];
-          if (fs.existsSync(dir)) logger.info(`re - require plugin '${filename}'`);
-          else {
-            logger.warn(`deleted plugin '${filename}'`);
-            return delete global.plugins[filename];
-          }
-        } else logger.info(`requiring new plugin '${filename}'`);
-        let err = syntaxerror(fs.readFileSync(dir), filename);
-        if (err) logger.error(`syntax error while loading '${filename}'\n${err}`);
-        else
-          try {
-            global.plugins[filename] = require(dir);
-          } catch (e) {
-            logger.error(e);
-          } finally {
-            global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)));
-          }
-      }
-    });
+  if (!pluginFile(filename)) return;
+  let subdirs = await fs.readdirSync(pluginFolder);
+  let dir = subdirs.reduce((acc, files) => acc || path.join(pluginFolder, files, filename), "");
+  if (!dir) return;
+  if (dir in require.cache) {
+    delete require.cache[dir];
+    if (!fs.existsSync(dir)) {
+      logger.warn(`deleted plugin '${filename}'`);
+      return delete global.plugins[filename];
+    }
+  }
+  let err = syntaxerror(fs.readFileSync(dir), filename);
+  if (err) logger.error(`syntax error while loading '${filename}'\n${err}`);
+  else {
+    try {
+      global.plugins = Object.assign({ [filename]: require(dir) }, global.plugins);
+    } catch (e) {
+      logger.error(e);
+    }
   }
 };
 Object.freeze(global.reload);
@@ -88,40 +79,40 @@ global.db = new Low(new JSONFile("database.json"));
 global.roles = JSON.parse(fs.readFileSync('./roles.json'))
 global.mods = roles.mods
 
+// Program paths
+const browser = require('os').platform() === 'win32' ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" : "/usr/bin/google-chrome-stable";
+
 async function ClientConnect() {
-  global.client = new Client({
+  const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
       args: ["--no-sandbox", "--disable-gpu"],
-      executablePath: "/usr/bin/google-chrome-stable",
+      executablePath: browser,
+      ignoreHTTPSErrors: true,
+      headless: true,
+      devtools: false,
     },
   });
 
-  // Bind logger into client
   client.logger = logger;
 
-  // Webloading event
   client.on("loading_screen", (percent) => {
     logger.info(`Connecting, loading web... Status: ${percent}%`);
   });
 
-  // QR event
   client.on("qr", (qr) => {
     QRCode.generate(qr, { small: true });
     logger.info("Scan QR code to continue.");
   });
 
-  // Tell the user if client is ready
   client.on("ready", async () => {
-    if (global.db.data == null) await loadDatabase();
+    if (!global.db.data) await loadDatabase();
     logger.info("Opened connection to WA Web");
     logger.info("Client bot is ready!");
   });
 
-  // Message event
   client.on("message", require("./handler").handler.bind(client));
 
-  // Initialize the client
   client.initialize();
   logger.info("Connecting to WA Web");
 
@@ -134,11 +125,6 @@ async function loadDatabase() {
   await global.db.read();
   global.db.data = {
     users: {},
-    chats: {},
-    stats: {},
-    msgs: {},
-    sticker: {},
-    settings: {},
     ...(global.db.data || {}),
   };
   global.db.chain = _.chain(global.db.data);
@@ -146,7 +132,12 @@ async function loadDatabase() {
 
 // Save database every minute
 setInterval(async () => {
-  await global.db.write();
+  try {
+    await global.db.write();
+  } catch {
+    loadDatabase();
+    await global.db.write();
+  }
 }, 30 * 1000);
 
 // Readline

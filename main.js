@@ -2,7 +2,7 @@ const { Boom } = require("@hapi/boom");
 const {
   default: WASocket,
   DisconnectReason,
-  fetchLatestWaWebVersion,
+  fetchLatestBaileysVersion,
   useMultiFileAuthState,
 } = require("@whiskeysockets/baileys");
 const fs = require("fs");
@@ -108,7 +108,7 @@ global.prefix = new RegExp(
 
 const connect = async () => {
   const { state, saveCreds } = await useMultiFileAuthState(".credentials");
-  const { version } = await fetchLatestWaWebVersion();
+  const { version } = await fetchLatestBaileysVersion();
 
   global.client = WASocket({
     printQRInTerminal: true,

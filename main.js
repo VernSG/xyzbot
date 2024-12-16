@@ -4,11 +4,14 @@ const {
   DisconnectReason,
   fetchLatestBaileysVersion,
   useMultiFileAuthState,
+  proto,
+  makeCacheableSignalKeyStore,
 } = require("@whiskeysockets/baileys");
 const fs = require("fs");
 const helper = require("./lib/helper");
 const syntaxerror = require("syntax-error");
 const path = require("path");
+const NodeCache = require("node-cache");
 
 // Logger
 const logger = require("pino")({
@@ -48,9 +51,11 @@ pluginFilter.map(async ({ name }) => {
   let files = await fs.readdirSync(path.join(pluginFolder, name));
   for (let filename of files) {
     try {
-      global.plugins[filename] = require(
-        path.join(pluginFolder, name, filename),
-      );
+      global.plugins[filename] = require(path.join(
+        pluginFolder,
+        name,
+        filename
+      ));
       fs.watch(pluginFolder + "/" + name, global.reload);
     } catch (e) {
       logger.error(e);
@@ -86,8 +91,8 @@ global.reload = async (_event, filename) => {
           } finally {
             global.plugins = Object.fromEntries(
               Object.entries(global.plugins).sort(([a], [b]) =>
-                a.localeCompare(b),
-              ),
+                a.localeCompare(b)
+              )
             );
           }
       }
@@ -101,20 +106,33 @@ global.prefix = new RegExp(
   "^[" +
     "‎xzXZ/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.\\-".replace(
       /[|\\{}()[\]^$+*?.\-\^]/g,
-      "\\$&",
+      "\\$&"
     ) +
-    "]",
+    "]"
 );
 
 const connect = async () => {
   const { state, saveCreds } = await useMultiFileAuthState(".credentials");
   const { version } = await fetchLatestBaileysVersion();
 
+  // external map to store retry counts of messages when decryption/encryption fails
+  // keep this out of the socket itself, so as to prevent a message decryption/encryption loop across socket restarts
+  const msgRetryCounterCache = new NodeCache();
+
   global.client = WASocket({
     printQRInTerminal: true,
-    auth: state,
-    logger: require("pino")({ level: "silent" }),
     version,
+    logger,
+    printQRInTerminal: true,
+    auth: {
+      creds: state.creds,
+      /** caching makes the store faster to send/recv messages */
+      keys: makeCacheableSignalKeyStore(state.keys, logger),
+    },
+    msgRetryCounterCache,
+    getMessage: () => {
+      return proto.Message.fromObject({}); // TODO: Make our own store mechanism
+    },
   });
 
   // Bind logger to client
@@ -136,7 +154,7 @@ const connect = async () => {
         connect();
       } else {
         logger.error(
-          "Disconnected from server because you're logged out, please regenerate a new session.",
+          "Disconnected from server because you're logged out, please regenerate a new session."
         );
         client.logout();
         fs.unlinkSync("./.credentials");
@@ -147,7 +165,7 @@ const connect = async () => {
 
   client.ev.on(
     "messages.upsert",
-    require("./handler").chatHandler.bind(client),
+    require("./handler").chatHandler.bind(client)
   );
 
   client.ev.on("creds.update", async () => {

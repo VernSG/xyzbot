@@ -26,6 +26,7 @@
     "file-type": "^16.5.2",
     "hoyoapi": "^1.1.1",
     "json-stable-stringify": "^1.0.2",
+    "link-preview-js": "^3.0.12",
     "lodash": "^4.17.21",
     "lowdb": "^2.1.0",
     "pino-pretty": "^10.0.0",

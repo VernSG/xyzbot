@@ -47,7 +47,7 @@ sudo docker pull vernsg/xyzbot:latest
 
 ```
 sudo docker run -d \
---name xyzbot \
+--name vernbot \
 vernsg/xyzbot:latest
 ```
 
@@ -85,4 +85,10 @@ sudo docker rmi xyzbot
 
 ```
 sudo docker rm xyzbot (nama container)
+```
+
+# Open bash container docker
+
+```
+sudo docker exec -it vernbot /bin/sh
 ```

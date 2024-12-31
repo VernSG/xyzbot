@@ -1,22 +1,31 @@
-# Gunakan base image Node.js
+# Use Node.js base image
 FROM node:20-alpine
 
-# Set working directory di dalam container
+# Install Python, build dependencies, and libraries for canvas
+RUN apk update && \
+    apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    bash \
+    pkgconfig \
+    cairo-dev \
+    pango-dev \
+    pixman-dev \
+    libjpeg-turbo-dev \
+    libpng-dev
+
+# Set working directory inside the container
 WORKDIR /app
 
-# Salin package.json dan package-lock.json
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Salin semua file proyek, termasuk folder sessions
+# Copy all project files
 COPY . .
 
-# Salin folder sessions ke dalam image (misalnya di /app/sessions)
-# COPY ./sessions /app/sessions
-# RUN ls -l /app
-
-
-# Jalankan bot
+# Run the bot
 CMD ["node", "index.js"]

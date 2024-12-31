@@ -45,6 +45,12 @@ sudo docker pull vernsg/xyzbot:latest
         vernsg/xyzbot:latest
 ```
 
+```
+sudo docker run -d \
+--name xyzbot \
+vernsg/xyzbot:latest
+```
+
 # Periksa apakah container berjalan
 
 ```

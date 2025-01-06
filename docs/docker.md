@@ -92,3 +92,7 @@ sudo docker rm xyzbot (nama container)
 ```
 sudo docker exec -it vernbot /bin/sh
 ```
+# Open bash klo udh ke close close terus
+```
+docker run -it <nama_image> /bin/bash
+```
